@@ -628,6 +628,17 @@
     </div>
 
     <div class="question">
+      <div class="question-label">Your name</div>
+      <input type="text" placeholder="First and last name" style="margin-bottom:12px">
+    </div>
+
+    <div class="question">
+      <div class="question-label">Your email address</div>
+      <div class="question-hint">We'll use this to follow up personally after your analysis.</div>
+      <input type="text" placeholder="your@email.com">
+    </div>
+
+    <div class="question">
       <div class="question-label">What drew you to GeoAlchemy Studio and this way of thinking about space?</div>
       <div class="question-hint">There are no wrong answers — your instinct brought you here.</div>
       <textarea placeholder="Share what resonated with you..."></textarea>
@@ -1199,7 +1210,18 @@
 
     // Collect responses using FormData (most reliable for Formspree)
     const formData = new FormData();
-    formData.append('_subject', 'New Codex Spatial Analysis — GeoAlchemy Studio');
+    // Get client name and email for subject line and Formspree routing
+    const allInputs = document.querySelectorAll('input[type="text"]');
+    let clientName = '';
+    let clientEmail = '';
+    allInputs.forEach(el => {
+      const label = el.closest('.question')?.querySelector('.question-label')?.textContent?.trim();
+      if (label === 'Your name') clientName = el.value.trim();
+      if (label === 'Your email address') clientEmail = el.value.trim();
+    });
+
+    formData.append('_subject', 'New Codex Spatial Analysis — ' + (clientName || 'New Client'));
+    formData.append('email', clientEmail || 'no-email@geoalchemy.studio');
 
     // Collect all textareas and text inputs
     document.querySelectorAll('textarea, input[type="text"]').forEach((el) => {
