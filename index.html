@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codex Spatial Analysis — GeoAlchemy Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --earth: #2C2416;
+    --clay: #8B6B4A;
+    --sage: #4A5E4A;
+    --sand: #C8A97E;
+    --linen: #F2EDE4;
+    --warm-white: #FAF8F4;
+    --gold: #B8963E;
+    --mist: #E8E0D5;
+    --deep: #1A1510;
+    --text: #3A2E22;
+    --text-light: #7A6A58;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Jost', sans-serif;
+    background: var(--warm-white);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grain texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.6;
+  }
+
+  /* Progress bar */
+  .progress-track {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--mist);
+    z-index: 100;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--clay), var(--gold));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 0%;
+  }
+
+  /* Cover screen */
+  #cover {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 40px;
+    text-align: center;
+    background: var(--earth);
+    color: var(--linen);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #cover::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,150,62,0.15) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 20% 100%, rgba(139,107,74,0.2) 0%, transparent 50%);
+  }
+
+  .cover-geo {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.04;
+  }
+
+  .cover-content { position: relative; z-index: 1; max-width: 560px; }
+
+  .studio-name {
+    font-family: 'Jost', sans-serif;
+    font-weight: 300;
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--sand);
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 1s 0.2s forwards;
+  }
+
+  .cover-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(42px, 8vw, 72px);
+    line-height: 1.05;
+    color: var(--linen);
+    margin-bottom: 12px;
+    opacity: 0;
+    animation: fadeUp 1s 0.5s forwards;
+  }
+
+  .cover-title em {
+    font-style: italic;
+    color: var(--sand);
+  }
+
+  .cover-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--sand);
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeUp 1s 0.8s forwards;
+  }
+
+  .cover-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--gold);
+    margin: 0 auto 32px;
+    opacity: 0;
+    animation: fadeUp 1s 1s forwards;
+  }
+
+  .cover-intro {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: rgba(242,237,228,0.75);
+    margin-bottom: 48px;
+    opacity: 0;
+    animation: fadeUp 1s 1.1s forwards;
+  }
+
+  .cover-meta {
+    display: flex;
+    gap: 32px;
+    justify-content: center;
+    margin-bottom: 52px;
+    opacity: 0;
+    animation: fadeUp 1s 1.3s forwards;
+  }
+
+  .cover-meta-item {
+    text-align: center;
+  }
+
+  .cover-meta-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--sand);
+    display: block;
+  }
+
+  .cover-meta-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(242,237,228,0.5);
+  }
+
+  .begin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 40px;
+    background: transparent;
+    border: 1px solid var(--sand);
+    color: var(--linen);
+    font-family: 'Jost', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    opacity: 0;
+    animation: fadeUp 1s 1.5s forwards;
+  }
+
+  .begin-btn:hover {
+    background: var(--sand);
+    color: var(--earth);
+    border-color: var(--sand);
+  }
+
+  .begin-btn svg { transition: transform 0.3s ease; }
+  .begin-btn:hover svg { transform: translateX(4px); }
+
+  /* Main questionnaire */
+  #questionnaire {
+    display: none;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 80px 40px 120px;
+  }
+
+  /* Section */
+  .section {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+
+  .section.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .section-header {
+    margin-bottom: 52px;
+  }
+
+  .section-number {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--clay);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-number::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--mist);
+    max-width: 80px;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 42px;
+    line-height: 1.1;
+    color: var(--earth);
+    margin-bottom: 12px;
+  }
+
+  .section-title em { font-style: italic; color: var(--clay); }
+
+  .section-desc {
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-light);
+    line-height: 1.7;
+    max-width: 480px;
+  }
+
+  /* Questions */
+  .question {
+    margin-bottom: 44px;
+  }
+
+  .question-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--earth);
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+
+  .question-hint {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--text-light);
+    margin-bottom: 16px;
+    font-style: italic;
+  }
+
+  /* Text inputs */
+  textarea, input[type="text"] {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--mist);
+    padding: 12px 0;
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.3s ease;
+    resize: none;
+  }
+
+  textarea {
+    min-height: 80px;
+    line-height: 1.7;
+  }
+
+  textarea:focus, input[type="text"]:focus {
+    border-bottom-color: var(--clay);
+  }
+
+  textarea::placeholder, input[type="text"]::placeholder {
+    color: var(--mist);
+    font-style: italic;
+  }
+
+  /* Choice options */
+  .options-grid {
+    display: grid;
+    gap: 8px;
+  }
+
+  .options-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+  .options-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .option-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--mist);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    background: transparent;
+  }
+
+  .option-item:hover {
+    border-color: var(--clay);
+    background: rgba(139,107,74,0.04);
+  }
+
+  .option-item.selected {
+    border-color: var(--clay);
+    background: rgba(139,107,74,0.08);
+  }
+
+  .option-box {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--mist);
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .option-item.selected .option-box {
+    border-color: var(--clay);
+    background: var(--clay);
+  }
+
+  .option-box::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--linen);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .option-item.selected .option-box::after { opacity: 1; }
+
+  .option-text {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  /* Scale / rating */
+  .scale-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .scale-label {
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--text-light);
+    min-width: 80px;
+  }
+
+  .scale-label:last-child { text-align: right; }
+
+  .scale-items {
+    display: flex;
+    gap: 6px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .scale-dot {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--mist);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .scale-dot:hover, .scale-dot.selected {
+    border-color: var(--clay);
+    background: var(--clay);
+    color: var(--linen);
+  }
+
+  /* Navigation */
+  .nav-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 60px;
+    padding-top: 32px;
+    border-top: 1px solid var(--mist);
+  }
+
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    background: transparent;
+    border: 1px solid var(--mist);
+    color: var(--text-light);
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .nav-btn:hover {
+    border-color: var(--clay);
+    color: var(--clay);
+  }
+
+  .nav-btn.primary {
+    background: var(--earth);
+    border-color: var(--earth);
+    color: var(--linen);
+  }
+
+  .nav-btn.primary:hover {
+    background: var(--clay);
+    border-color: var(--clay);
+  }
+
+  .nav-progress {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--text-light);
+  }
+
+  /* Thank you screen */
+  #thankyou {
+    display: none;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 80px 40px;
+    background: var(--earth);
+    color: var(--linen);
+  }
+
+  .thankyou-geo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 40px;
+    opacity: 0.6;
+  }
+
+  .thankyou-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 52px;
+    font-weight: 300;
+    color: var(--linen);
+    margin-bottom: 12px;
+  }
+
+  .thankyou-title em { font-style: italic; color: var(--sand); }
+
+  .thankyou-sub {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--sand);
+    margin-bottom: 32px;
+  }
+
+  .thankyou-body {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: rgba(242,237,228,0.7);
+    max-width: 440px;
+    margin: 0 auto 48px;
+  }
+
+  .thankyou-sig {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 20px;
+    color: var(--sand);
+  }
+
+  /* Decorative geo SVG */
+  .geo-accent {
+    position: fixed;
+    right: -100px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+    height: 300px;
+    opacity: 0.04;
+    pointer-events: none;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    #questionnaire { padding: 60px 24px 100px; }
+    .options-grid.cols-2, .options-grid.cols-3 { grid-template-columns: 1fr; }
+    .section-title { font-size: 32px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+<!-- Sacred geometry background accent -->
+<svg class="geo-accent" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="150" cy="150" r="140" fill="none" stroke="#8B6B4A" stroke-width="0.5"/>
+  <circle cx="150" cy="150" r="100" fill="none" stroke="#8B6B4A" stroke-width="0.5"/>
+  <circle cx="150" cy="150" r="60" fill="none" stroke="#8B6B4A" stroke-width="0.5"/>
+  <polygon points="150,20 267,95 267,205 150,280 33,205 33,95" fill="none" stroke="#B8963E" stroke-width="0.5"/>
+  <polygon points="150,60 230,110 230,190 150,240 70,190 70,110" fill="none" stroke="#B8963E" stroke-width="0.3"/>
+  <line x1="150" y1="10" x2="150" y2="290" stroke="#8B6B4A" stroke-width="0.3"/>
+  <line x1="10" y1="150" x2="290" y2="150" stroke="#8B6B4A" stroke-width="0.3"/>
+</svg>
+
+<!-- COVER -->
+<div id="cover">
+  <svg class="cover-geo" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="250" cy="250" r="240" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
+    <circle cx="250" cy="250" r="180" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
+    <circle cx="250" cy="250" r="120" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
+    <circle cx="250" cy="250" r="60" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
+    <polygon points="250,30 450,145 450,355 250,470 50,355 50,145" fill="none" stroke="#B8963E" stroke-width="0.8"/>
+    <polygon points="250,90 390,170 390,330 250,410 110,330 110,170" fill="none" stroke="#B8963E" stroke-width="0.5"/>
+    <line x1="250" y1="10" x2="250" y2="490" stroke="#C8A97E" stroke-width="0.3"/>
+    <line x1="10" y1="250" x2="490" y2="250" stroke="#C8A97E" stroke-width="0.3"/>
+    <line x1="75" y1="75" x2="425" y2="425" stroke="#C8A97E" stroke-width="0.3"/>
+    <line x1="425" y1="75" x2="75" y2="425" stroke="#C8A97E" stroke-width="0.3"/>
+  </svg>
+
+  <div class="cover-content">
+    <div class="studio-name">GeoAlchemy Studio</div>
+    <h1 class="cover-title">Codex<br><em>Spatial Analysis</em></h1>
+    <p class="cover-subtitle">A sacred inquiry into your space</p>
+    <div class="cover-divider"></div>
+    <p class="cover-intro">Before we design your space, we must first understand your life — the way you move through it, what nourishes you, what depletes you, and what you're calling into being. This questionnaire is the foundation of everything we'll create together.</p>
+    <div class="cover-meta">
+      <div class="cover-meta-item">
+        <span class="cover-meta-num">7</span>
+        <span class="cover-meta-label">Dimensions</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-num">~20</span>
+        <span class="cover-meta-label">Minutes</span>
+      </div>
+      <div class="cover-meta-item">
+        <span class="cover-meta-num">∞</span>
+        <span class="cover-meta-label">Possibility</span>
+      </div>
+    </div>
+    <button class="begin-btn" onclick="startQuestionnaire()">
+      Begin the analysis
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- QUESTIONNAIRE -->
+<div id="questionnaire">
+
+  <!-- SECTION 1: Vision -->
+  <div class="section" id="section-1">
+    <div class="section-header">
+      <div class="section-number">01 — Vision</div>
+      <h2 class="section-title">Your <em>intention</em></h2>
+      <p class="section-desc">Every great space begins with a clear vision. Tell us about you, your desires, and the transformation you're seeking.</p>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Your name</div>
+      <input type="text" placeholder="First and last name" style="margin-bottom:12px">
+    </div>
+
+    <div class="question">
+      <div class="question-label">Your email address</div>
+      <div class="question-hint">We'll use this to follow up personally after your analysis.</div>
+      <input type="text" placeholder="your@email.com">
+    </div>
+
+    <div class="question">
+      <div class="question-label">What drew you to GeoAlchemy Studio and this way of thinking about space?</div>
+      <div class="question-hint">There are no wrong answers — your instinct brought you here.</div>
+      <textarea placeholder="Share what resonated with you..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What is your property type?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Primary residence</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Second home / retreat</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Office / workspace</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Wellness center</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Investment property</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Other</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Is this a new build, renovation, or refresh?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">New build from scratch</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Full renovation</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Partial renovation</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Interior refresh only</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">How do you currently feel in your existing space — and how do you want to feel?</div>
+      <div class="question-hint">Be honest. This contrast is the creative brief.</div>
+      <textarea placeholder="Right now I feel... What I desire to feel is..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Who is this space for?</div>
+      <div class="question-hint">Select all that apply.</div>
+      <div class="options-grid cols-3">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Myself</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">My partner</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">My children</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">My clients</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">My community</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Future generations</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What is the deeper shift you're making?</div>
+      <div class="question-hint">Beyond aesthetics — what are you really calling in with this space?</div>
+      <textarea placeholder="The real transformation I'm seeking is..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <div></div>
+      <span class="nav-progress">1 of 7</span>
+      <button class="nav-btn primary" onclick="nextSection()">
+        Continue
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Health Goals -->
+  <div class="section" id="section-2">
+    <div class="section-header">
+      <div class="section-number">02 — Health</div>
+      <h2 class="section-title">Your <em>vitality</em></h2>
+      <p class="section-desc">Your space is your most powerful health technology. Let's understand what you're working toward and what you've already learned.</p>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What are your top 3 health goals for this home?</div>
+      <div class="question-hint">Think physical, mental, emotional, and energetic.</div>
+      <input type="text" placeholder="Goal 1" style="margin-bottom:12px">
+      <input type="text" placeholder="Goal 2" style="margin-bottom:12px">
+      <input type="text" placeholder="Goal 3">
+    </div>
+
+    <div class="question">
+      <div class="question-label">What health strategies are you currently employing — and what's working?</div>
+      <div class="question-hint">Diet, detox protocols, supplements, light therapy, grounding — anything relevant.</div>
+      <textarea placeholder="What I'm already doing to support my health..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What one health outcome would make this project a complete success for you?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Deeper, more restorative sleep</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Mental clarity + focus</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Nervous system regulation</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Reduced toxic load / detox support</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">More sustained energy</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Emotional resilience + peace</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Spiritual connection + clarity</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Creative inspiration + flow</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Have you experienced health challenges you believe were related to your environment?</div>
+      <div class="question-hint">Mold exposure, chemical sensitivities, EMF sensitivity, poor sleep — anything that brought you to this work.</div>
+      <textarea placeholder="Share as much or as little as you're comfortable with..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevSection()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <span class="nav-progress">2 of 7</span>
+      <button class="nav-btn primary" onclick="nextSection()">
+        Continue
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 3: Physical Environment -->
+  <div class="section" id="section-3">
+    <div class="section-header">
+      <div class="section-number">03 — Physical</div>
+      <h2 class="section-title">Your <em>environment</em></h2>
+      <p class="section-desc">The physical parameters of your space — materials, air, water, light, and electromagnetic environment. This is where biology meets building science.</p>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Is your current environment built from natural materials?</div>
+      <div class="question-hint">Real wood with natural finishes, plaster or clay-based paints, stone, clay tile, metals with natural finishes.</div>
+      <div class="options-grid cols-3">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Yes, primarily</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Partially</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">No — conventional materials</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">How are you currently filtering your air?</div>
+      <div class="question-hint">Select all that apply.</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">MERV 13 furnace filter</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">MERV 13 / HEPA standalone unit</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">ERV / HRV system</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Air scrubber</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Opening windows regularly</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Not currently filtering</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">How are you currently filtering your water?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Whole-house filtration system</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Berkey or countertop filter</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Shower head filter</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Reverse osmosis system</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Structured / living water device</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Not currently filtering</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Are you currently mitigating EMF exposure?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">WiFi off at night</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Phone out of bedroom</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Shielding paint on walls/ceilings</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Shielded electrical cabling</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Power conditioning at panel</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Not yet — this is new to me</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What is your current lighting situation?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Incandescent or halogen</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Flicker-free LED</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Standard LED (flickering)</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Natural light as primary source</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Red light therapy device</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Blue light blocking at night</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Are there any acoustic concerns in your current or future space?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Sound separation between rooms</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Reverberation / echo quality</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Vibration from equipment</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Frequency resonance design</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Outdoor sound intrusion</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">No concerns</span></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevSection()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <span class="nav-progress">3 of 7</span>
+      <button class="nav-btn primary" onclick="nextSection()">
+        Continue
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Energetics -->
+  <div class="section" id="section-4">
+    <div class="section-header">
+      <div class="section-number">04 — Energetics</div>
+      <h2 class="section-title">Your <em>resonance</em></h2>
+      <p class="section-desc">Space holds frequency. How a room feels is not decorative — it's biological. Let's understand the energetic qualities you're calling in.</p>
+    </div>
+
+    <div class="question">
+      <div class="question-label">How do you currently feel in your space?</div>
+      <div class="question-hint">Select all that apply.</div>
+      <div class="options-grid cols-3">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Tired</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Foggy</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Anxious</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Scattered</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Depleted</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Disconnected</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Neutral / fine</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Already quite good</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">How do you want to feel in this new space?</div>
+      <div class="options-grid cols-3">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Grounded + stable</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Deeply rested</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Creative + inspired</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Connected + open</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Calm + centered</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Expansive + alive</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Spiritually clear</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Vitalized + energized</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Have you visited any spaces — temples, homes, retreat centers, places in nature — that profoundly affected you?</div>
+      <div class="question-hint">What made them feel the way they did?</div>
+      <textarea placeholder="Describe a space that moved you and why..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What investments are you open to exploring?</div>
+      <div class="question-hint">Select all that interest you.</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Air filtration upgrade</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Water filtration system</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Non-toxic interior finishes</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">EMF mitigation systems</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Sacred geometry elements</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Biophilic design / living walls</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Net-zero energy systems</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">New structure / full build</span></div>
+      </div>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevSection()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <span class="nav-progress">4 of 7</span>
+      <button class="nav-btn primary" onclick="nextSection()">
+        Continue
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 5: Sacred Geometry + Site -->
+  <div class="section" id="section-5">
+    <div class="section-header">
+      <div class="section-number">05 — Sacred Geometry + Site</div>
+      <h2 class="section-title">Ancient <em>temple science</em></h2>
+      <p class="section-desc">Geometry is the language through which nature organizes itself. We use harmonic proportions, cardinal alignments, and sacred symbols to attune your space to natural cycles.</p>
+    </div>
+
+    <div class="question">
+      <div class="question-label">For your lake house site — do you know the orientation of the land?</div>
+      <div class="question-hint">Which direction does the primary view or access face?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">North-facing</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">South-facing</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">East-facing</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">West-facing</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Lake to the south</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Not yet determined</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Do you have a site plan, survey, or topographic map of the property?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Yes — I can share it</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Not yet — in process</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">No, starting from scratch</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">I can draw a rough sketch</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What sacred geometry elements resonate with you?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Harmonic proportions (rooms, doors, windows)</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Cardinal alignments to sun + moon</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Sacred geometry glyphs + symbols</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Fibonacci / golden ratio proportions</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Sunrise / sunset window alignments</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">All of the above</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Have you visited any temples or sacred sites around the world that moved you deeply?</div>
+      <div class="question-hint">These places are reference points for the quality of space we're designing toward.</div>
+      <textarea placeholder="Name any places — temples, natural sites, buildings — and what you felt there..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Are there any symbols or geometry forms that hold deep personal meaning for you?</div>
+      <textarea placeholder="Describe or name any symbols, shapes, or patterns that resonate..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevSection()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <span class="nav-progress">5 of 7</span>
+      <button class="nav-btn primary" onclick="nextSection()">
+        Continue
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 6: Materials + Aesthetics -->
+  <div class="section" id="section-6">
+    <div class="section-header">
+      <div class="section-number">06 — Materials + Aesthetics</div>
+      <h2 class="section-title">The <em>texture</em> of your world</h2>
+      <p class="section-desc">Materials are not merely visual — they carry resonant frequency, biological properties, and emotional qualities. Let's discover your material language.</p>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What materials make you feel grounded and at ease?</div>
+      <div class="options-grid cols-3">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Wood</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Stone</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Clay / earth plaster</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Linen + natural textiles</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Living plants</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Water features</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What makes you feel cold or disconnected?</div>
+      <div class="options-grid cols-3">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Glass + mirror excess</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Synthetic / plastic</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Industrial metal</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Stark white walls</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Vinyl / laminate</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Harsh overhead lighting</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What aesthetic direction resonates with your vision for this retreat?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Earthy / organic warmth</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Japanese wabi-sabi</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Temple / sacred geometry</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Modern + minimal</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Rustic lakeside</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Something entirely new</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">GeoAlchemy works with the resonant frequency of materials. Does this interest you?</div>
+      <div class="question-hint">For example: Gold carries solar resonance — truth and radiance. Silver holds lunar, feminine qualities. Maple balances masculine and feminine. Oak grounds and stabilizes.</div>
+      <div class="options-grid cols-3">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Yes — deeply</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Curious to learn more</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Not a priority for me</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Are there specific materials or colors you know you want — or absolutely don't want?</div>
+      <textarea placeholder="Share any material musts, preferences, or hard noes..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevSection()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <span class="nav-progress">6 of 7</span>
+      <button class="nav-btn primary" onclick="nextSection()">
+        Continue
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- SECTION 7: Legacy + Practical -->
+  <div class="section" id="section-7">
+    <div class="section-header">
+      <div class="section-number">07 — Legacy + Practicalities</div>
+      <h2 class="section-title">Your <em>impact</em></h2>
+      <p class="section-desc">The final dimension — the legacy you're building and the practical information we need to begin.</p>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What results do you most desire from this process?</div>
+      <div class="question-hint">Physical, emotional, mental, spiritual, and financial — be specific and ambitious.</div>
+      <textarea placeholder="The results I most desire are..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">How do you want to be seen by the world through this space?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Visionary + ahead of the curve</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Health-focused leader</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Sustainability steward</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Someone who lives their values</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">A sanctuary for others</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'multi')"><div class="option-box"></div><span class="option-text">Legacy builder</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What legacy do you want this space to leave behind?</div>
+      <textarea placeholder="In 20 years, I want people to say this space..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Who are the key decision-makers for this project?</div>
+      <textarea placeholder="Names and roles of anyone else involved in this decision..."></textarea>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What is your approximate project budget?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Under $500K</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">$500K – $1M</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">$1M – $2M</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">$2M+</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Still determining</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Prefer to discuss</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">What is your ideal timeline to begin?</div>
+      <div class="options-grid cols-2">
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Immediately — I'm ready now</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">Within the next 3 months</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">3–6 months</span></div>
+        <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">6–12 months</span></div>
+      </div>
+    </div>
+
+    <div class="question">
+      <div class="question-label">Is there anything else you'd like Jeremy and the GeoAlchemy team to know before your first call?</div>
+      <textarea placeholder="Any context, concerns, dreams, or questions you want to bring into the conversation..."></textarea>
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="prevSection()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13 8H3M7 12l-4-4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Back
+      </button>
+      <span class="nav-progress">7 of 7</span>
+      <button class="nav-btn primary" onclick="submitForm()">
+        Complete analysis
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- THANK YOU -->
+<div id="thankyou">
+  <svg class="thankyou-geo" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="40" cy="40" r="38" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
+    <circle cx="40" cy="40" r="26" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
+    <circle cx="40" cy="40" r="14" fill="none" stroke="#B8963E" stroke-width="0.5"/>
+    <polygon points="40,4 73,22 73,58 40,76 7,58 7,22" fill="none" stroke="#B8963E" stroke-width="0.8"/>
+  </svg>
+  <h2 class="thankyou-title">Thank <em>you</em>,<br>Karen</h2>
+  <p class="thankyou-sub">Your analysis is complete</p>
+  <div style="width:40px;height:1px;background:#B8963E;margin:0 auto 28px"></div>
+  <p class="thankyou-body">Your responses will inform every design decision we make together. Jeremy will review your Codex and reach out personally to schedule your discovery call. We're honored to be part of this journey.</p>
+  <p class="thankyou-sig">— Jeremy Miller, GeoAlchemy Studio</p>
+</div>
+
+<script>
+  let currentSection = 0;
+  const totalSections = 7;
+
+  function startQuestionnaire() {
+    document.getElementById('cover').style.display = 'none';
+    document.getElementById('questionnaire').style.display = 'block';
+    showSection(1);
+    updateProgress(1);
+  }
+
+  function showSection(n) {
+    document.querySelectorAll('.section').forEach(s => {
+      s.classList.remove('active');
+      s.style.display = 'none';
+    });
+    const section = document.getElementById('section-' + n);
+    if (section) {
+      section.style.display = 'block';
+      setTimeout(() => section.classList.add('active'), 10);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    currentSection = n;
+  }
+
+  function nextSection() {
+    if (currentSection < totalSections) {
+      showSection(currentSection + 1);
+      updateProgress(currentSection + 1);
+    }
+  }
+
+  function prevSection() {
+    if (currentSection > 1) {
+      showSection(currentSection - 1);
+      updateProgress(currentSection - 1);
+    }
+  }
+
+  function updateProgress(n) {
+    const pct = (n / totalSections) * 100;
+    document.getElementById('progressFill').style.width = pct + '%';
+  }
+
+  function toggleOption(el, type) {
+    const grid = el.closest('.options-grid');
+    if (type === 'single') {
+      grid.querySelectorAll('.option-item').forEach(o => o.classList.remove('selected'));
+    }
+    el.classList.toggle('selected');
+  }
+
+  async function submitForm() {
+    const submitBtn = document.querySelector('#section-7 .nav-btn.primary');
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+
+    // Collect responses using FormData (most reliable for Formspree)
+    const formData = new FormData();
+    // Get client name and email for subject line and Formspree routing
+    const allInputs = document.querySelectorAll('input[type="text"]');
+    let clientName = '';
+    let clientEmail = '';
+    allInputs.forEach(el => {
+      const label = el.closest('.question')?.querySelector('.question-label')?.textContent?.trim();
+      if (label === 'Your name') clientName = el.value.trim();
+      if (label === 'Your email address') clientEmail = el.value.trim();
+    });
+
+    formData.append('_subject', 'New Codex Spatial Analysis — ' + (clientName || 'New Client'));
+    formData.append('email', clientEmail || 'no-email@geoalchemy.studio');
+
+    // Collect all textareas and text inputs
+    document.querySelectorAll('textarea, input[type="text"]').forEach((el) => {
+      const label = el.closest('.question')?.querySelector('.question-label')?.textContent?.trim();
+      if (label && el.value.trim()) {
+        formData.append(label, el.value.trim());
+      }
+    });
+
+    // Collect all selected options
+    document.querySelectorAll('.section').forEach(section => {
+      const sectionTitle = section.querySelector('.section-number')?.textContent?.trim() || '';
+      section.querySelectorAll('.question').forEach(q => {
+        const label = q.querySelector('.question-label')?.textContent?.trim();
+        const selected = [...q.querySelectorAll('.option-item.selected')]
+          .map(o => o.querySelector('.option-text')?.textContent?.trim())
+          .filter(Boolean);
+        if (label && selected.length > 0) {
+          formData.append(sectionTitle + ' | ' + label, selected.join(', '));
+        }
+      });
+    });
+
+    try {
+      const response = await fetch('https://formspree.io/f/xaqljwyr', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        document.getElementById('questionnaire').style.display = 'none';
+        const ty = document.getElementById('thankyou');
+        ty.style.display = 'flex';
+        document.getElementById('progressFill').style.width = '100%';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        const errMsg = result.errors ? result.errors.map(e => e.message).join(', ') : 'Submission failed';
+        console.error('Formspree error:', errMsg);
+        submitBtn.textContent = 'Something went wrong — try again';
+        submitBtn.disabled = false;
+      }
+    } catch (err) {
+      console.error('Network error:', err);
+      submitBtn.textContent = 'Connection error — try again';
+      submitBtn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
