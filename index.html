@@ -4,28 +4,59 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Codex Spatial Analysis — GeoAlchemy Studio</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+@font-face {
+  font-family: 'Canela';
+  src: url('fonts/CanelaText-Regular-Trial.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Canela';
+  src: url('fonts/CanelaText-Light-Trial.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'Canela';
+  src: url('fonts/CanelaText-RegularItalic-Trial.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+}
+@font-face {
+  font-family: 'SuisseIntl';
+  src: url('fonts/SuisseIntlTrial-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'SuisseIntl';
+  src: url('fonts/SuisseIntlTrial-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+}
+</style>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --earth: #2C2416;
-    --clay: #8B6B4A;
-    --sage: #4A5E4A;
-    --sand: #C8A97E;
-    --linen: #F2EDE4;
-    --warm-white: #FAF8F4;
-    --gold: #B8963E;
-    --mist: #E8E0D5;
-    --deep: #1A1510;
-    --text: #3A2E22;
-    --text-light: #7A6A58;
+    --earth: #0A0A0A;
+    --clay: #3A3A3A;
+    --sage: #2A2A2A;
+    --sand: #AAAAAA;
+    --linen: #F5F5F5;
+    --warm-white: #FFFFFF;
+    --gold: #666666;
+    --mist: #DDDDDD;
+    --deep: #000000;
+    --text: #111111;
+    --text-light: #555555;
   }
 
   html { scroll-behavior: smooth; }
 
   body {
-    font-family: 'Jost', sans-serif;
+    font-family: 'SuisseIntl', sans-serif;
     background: var(--warm-white);
     color: var(--text);
     min-height: 100vh;
@@ -78,8 +109,8 @@
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(184,150,62,0.15) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 20% 100%, rgba(139,107,74,0.2) 0%, transparent 50%);
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 20% 100%, rgba(255,255,255,0.03) 0%, transparent 50%);
   }
 
   .cover-geo {
@@ -95,7 +126,7 @@
   .cover-content { position: relative; z-index: 1; max-width: 560px; }
 
   .studio-name {
-    font-family: 'Jost', sans-serif;
+    font-family: 'SuisseIntl', sans-serif;
     font-weight: 300;
     font-size: 11px;
     letter-spacing: 0.35em;
@@ -107,7 +138,7 @@
   }
 
   .cover-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-weight: 300;
     font-size: clamp(42px, 8vw, 72px);
     line-height: 1.05;
@@ -123,7 +154,7 @@
   }
 
   .cover-subtitle {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-style: italic;
     font-size: 18px;
     color: var(--sand);
@@ -165,7 +196,7 @@
   }
 
   .cover-meta-num {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-size: 28px;
     font-weight: 300;
     color: var(--sand);
@@ -187,7 +218,7 @@
     background: transparent;
     border: 1px solid var(--sand);
     color: var(--linen);
-    font-family: 'Jost', sans-serif;
+    font-family: 'SuisseIntl', sans-serif;
     font-size: 12px;
     font-weight: 400;
     letter-spacing: 0.25em;
@@ -253,7 +284,7 @@
   }
 
   .section-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-weight: 300;
     font-size: 42px;
     line-height: 1.1;
@@ -277,7 +308,7 @@
   }
 
   .question-label {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-size: 20px;
     font-weight: 400;
     color: var(--earth);
@@ -300,7 +331,7 @@
     border: none;
     border-bottom: 1px solid var(--mist);
     padding: 12px 0;
-    font-family: 'Jost', sans-serif;
+    font-family: 'SuisseIntl', sans-serif;
     font-size: 15px;
     font-weight: 300;
     color: var(--text);
@@ -450,7 +481,7 @@
     background: transparent;
     border: 1px solid var(--mist);
     color: var(--text-light);
-    font-family: 'Jost', sans-serif;
+    font-family: 'SuisseIntl', sans-serif;
     font-size: 11px;
     font-weight: 400;
     letter-spacing: 0.2em;
@@ -502,7 +533,7 @@
   }
 
   .thankyou-title {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-size: 52px;
     font-weight: 300;
     color: var(--linen);
@@ -512,7 +543,7 @@
   .thankyou-title em { font-style: italic; color: var(--sand); }
 
   .thankyou-sub {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-style: italic;
     font-size: 18px;
     color: var(--sand);
@@ -529,7 +560,7 @@
   }
 
   .thankyou-sig {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: 'Canela', serif;
     font-style: italic;
     font-size: 20px;
     color: var(--sand);
@@ -565,28 +596,28 @@
 
 <!-- Sacred geometry background accent -->
 <svg class="geo-accent" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="150" cy="150" r="140" fill="none" stroke="#8B6B4A" stroke-width="0.5"/>
-  <circle cx="150" cy="150" r="100" fill="none" stroke="#8B6B4A" stroke-width="0.5"/>
-  <circle cx="150" cy="150" r="60" fill="none" stroke="#8B6B4A" stroke-width="0.5"/>
-  <polygon points="150,20 267,95 267,205 150,280 33,205 33,95" fill="none" stroke="#B8963E" stroke-width="0.5"/>
-  <polygon points="150,60 230,110 230,190 150,240 70,190 70,110" fill="none" stroke="#B8963E" stroke-width="0.3"/>
-  <line x1="150" y1="10" x2="150" y2="290" stroke="#8B6B4A" stroke-width="0.3"/>
-  <line x1="10" y1="150" x2="290" y2="150" stroke="#8B6B4A" stroke-width="0.3"/>
+  <circle cx="150" cy="150" r="140" fill="none" stroke="#555555" stroke-width="0.5"/>
+  <circle cx="150" cy="150" r="100" fill="none" stroke="#555555" stroke-width="0.5"/>
+  <circle cx="150" cy="150" r="60" fill="none" stroke="#555555" stroke-width="0.5"/>
+  <polygon points="150,20 267,95 267,205 150,280 33,205 33,95" fill="none" stroke="#888888" stroke-width="0.5"/>
+  <polygon points="150,60 230,110 230,190 150,240 70,190 70,110" fill="none" stroke="#888888" stroke-width="0.3"/>
+  <line x1="150" y1="10" x2="150" y2="290" stroke="#555555" stroke-width="0.3"/>
+  <line x1="10" y1="150" x2="290" y2="150" stroke="#555555" stroke-width="0.3"/>
 </svg>
 
 <!-- COVER -->
 <div id="cover">
   <svg class="cover-geo" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="250" cy="250" r="240" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
-    <circle cx="250" cy="250" r="180" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
-    <circle cx="250" cy="250" r="120" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
-    <circle cx="250" cy="250" r="60" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
-    <polygon points="250,30 450,145 450,355 250,470 50,355 50,145" fill="none" stroke="#B8963E" stroke-width="0.8"/>
-    <polygon points="250,90 390,170 390,330 250,410 110,330 110,170" fill="none" stroke="#B8963E" stroke-width="0.5"/>
-    <line x1="250" y1="10" x2="250" y2="490" stroke="#C8A97E" stroke-width="0.3"/>
-    <line x1="10" y1="250" x2="490" y2="250" stroke="#C8A97E" stroke-width="0.3"/>
-    <line x1="75" y1="75" x2="425" y2="425" stroke="#C8A97E" stroke-width="0.3"/>
-    <line x1="425" y1="75" x2="75" y2="425" stroke="#C8A97E" stroke-width="0.3"/>
+    <circle cx="250" cy="250" r="240" fill="none" stroke="#666666" stroke-width="0.5"/>
+    <circle cx="250" cy="250" r="180" fill="none" stroke="#666666" stroke-width="0.5"/>
+    <circle cx="250" cy="250" r="120" fill="none" stroke="#666666" stroke-width="0.5"/>
+    <circle cx="250" cy="250" r="60" fill="none" stroke="#666666" stroke-width="0.5"/>
+    <polygon points="250,30 450,145 450,355 250,470 50,355 50,145" fill="none" stroke="#888888" stroke-width="0.8"/>
+    <polygon points="250,90 390,170 390,330 250,410 110,330 110,170" fill="none" stroke="#888888" stroke-width="0.5"/>
+    <line x1="250" y1="10" x2="250" y2="490" stroke="#666666" stroke-width="0.3"/>
+    <line x1="10" y1="250" x2="490" y2="250" stroke="#666666" stroke-width="0.3"/>
+    <line x1="75" y1="75" x2="425" y2="425" stroke="#666666" stroke-width="0.3"/>
+    <line x1="425" y1="75" x2="75" y2="425" stroke="#666666" stroke-width="0.3"/>
   </svg>
 
   <div class="cover-content">
@@ -710,7 +741,7 @@
     </div>
 
     <div class="question">
-      <div class="question-label">What are your top 3 health goals for this home?</div>
+      <div class="question-label">What are your top 3 health goals for this project?</div>
       <div class="question-hint">Think physical, mental, emotional, and energetic.</div>
       <input type="text" placeholder="Goal 1" style="margin-bottom:12px">
       <input type="text" placeholder="Goal 2" style="margin-bottom:12px">
@@ -928,8 +959,8 @@
     </div>
 
     <div class="question">
-      <div class="question-label">For your lake house site — do you know the orientation of the land?</div>
-      <div class="question-hint">Which direction does the primary view or access face?</div>
+      <div class="question-label">For your project site — do you know the orientation of your land?</div>
+      <div class="question-hint">Which direction does the primary view or access face? (We can determine this together if unknown.)</div>
       <div class="options-grid cols-2">
         <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">North-facing</span></div>
         <div class="option-item" onclick="toggleOption(this, 'single')"><div class="option-box"></div><span class="option-text">South-facing</span></div>
@@ -1139,12 +1170,12 @@
 <!-- THANK YOU -->
 <div id="thankyou">
   <svg class="thankyou-geo" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="40" cy="40" r="38" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
-    <circle cx="40" cy="40" r="26" fill="none" stroke="#C8A97E" stroke-width="0.5"/>
-    <circle cx="40" cy="40" r="14" fill="none" stroke="#B8963E" stroke-width="0.5"/>
-    <polygon points="40,4 73,22 73,58 40,76 7,58 7,22" fill="none" stroke="#B8963E" stroke-width="0.8"/>
+    <circle cx="40" cy="40" r="38" fill="none" stroke="#666666" stroke-width="0.5"/>
+    <circle cx="40" cy="40" r="26" fill="none" stroke="#666666" stroke-width="0.5"/>
+    <circle cx="40" cy="40" r="14" fill="none" stroke="#888888" stroke-width="0.5"/>
+    <polygon points="40,4 73,22 73,58 40,76 7,58 7,22" fill="none" stroke="#888888" stroke-width="0.8"/>
   </svg>
-  <h2 class="thankyou-title">Thank <em>you</em>,<br>Karen</h2>
+  <h2 class="thankyou-title">Thank <em>you</em></h2>
   <p class="thankyou-sub">Your analysis is complete</p>
   <div style="width:40px;height:1px;background:#B8963E;margin:0 auto 28px"></div>
   <p class="thankyou-body">Your responses will inform every design decision we make together. Jeremy will review your Codex and reach out personally to schedule your discovery call. We're honored to be part of this journey.</p>
